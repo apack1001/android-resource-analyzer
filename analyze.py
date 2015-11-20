@@ -10,20 +10,20 @@ from grip import export
 
 def _all_resources_and_assets(path):
     pattern = "'\(main/res\)\|\(assets\)'"
-    return _find_sth_by_pattern(path, pattern)
+    return _find_sth_by_pattern(path, "*.*", pattern)
 
 
 def _all_dynamic_libraries(path):
     pattern = '\.so$'
-    return _find_sth_by_pattern(path, pattern)
+    return _find_sth_by_pattern(path, "*.so", pattern)
 
 
 def _all_jar_files(path):
     pattern = '\.jar$'
-    return _find_sth_by_pattern(path, pattern)
+    return _find_sth_by_pattern(path, "*.jar", pattern)
 
 
-def _find_sth_by_pattern(path, pattern):
+def _find_sth_by_pattern(path, suffix, pattern):
     cmd = "find %s -name '*.*' | grep -e %s" % (path, pattern)
     filename_list = os.popen(cmd).read().split('\n')
     ret = {}
@@ -40,11 +40,6 @@ def _find_sth_by_pattern(path, pattern):
 
     ret['total_size'] = total_size
 
-    return ret
-
-
-def _load_baseline_resources_and_assets(path, version):
-    ret = {}
     return ret
 
 
@@ -225,6 +220,47 @@ def large_size_dynamic_libraries(path, empathy):
     resources = _all_dynamic_libraries(path)
 
     return _large_size_dectect(resources, empathy)
+
+
+
+def load_from_project(path):
+    ret = {}
+    ret['assets_and_resources'] = _all_resources_and_assets(path)
+    print 'assets'
+    ret['jar'] = _all_jar_files(path)
+    print 'jar packages'
+    ret['dynamic_so_libs'] = _all_dynamic_libraries(path)
+    print 'dynamic libraries'
+
+    return ret
+
+
+def load_from_cache(path):
+    ret = None
+    with open(path) as f:
+        ret = json.load(f)
+    return ret
+
+
+def save(**kwargs):
+    """
+    save assets, resources, java packages, dynamic libraries properties.
+    """
+    out_filename = kwargs['out_filename']
+    out_path = kwargs['out_path']
+    assets_and_resources = kwargs['assets_and_resources']
+    jars = kwargs['jar']
+    dynamic_so_libs = kwargs['so']
+
+    filename = out_path + '/' + out_filename
+    json_result = {}
+    json_reuslt['assets_and_resources'] = assets_and_resources
+    json_result['jar'] = jars
+    json_result['dynamic_so_libs'] = dynamic_so_libs
+    content = json.dumps(json_result)
+
+    with open(filename, 'w') as f:
+        f.write(content)
 
 
 def report(**kwargs):
